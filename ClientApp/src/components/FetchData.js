@@ -1,17 +1,32 @@
 import React, { Component } from 'react';
-import { conditionallyUpdateScrollbar } from 'reactstrap/lib/utils';
+import * as authy from './authPopup.js';
 
 export class FetchData extends Component {
   static displayName = FetchData.name;
 
   constructor(props) {
     super(props);
-    this.state = { todos: [], loading: true };
+    this.state = { todos: [], loading: true, user: ""};
     this.deleteToDo = this.deleteToDo.bind(this);
     this.addToDo = this.addToDo.bind(this);
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    //auth.selectAccount();
+    //var response = await auth.signIn();
+    
+    //console.log(response.account.name);
+    //console.log('Component did mount with token: ' + response.accessToken);
+    
+    //this.populateWeatherData(response.accessToken);
+    //this.setState({user: response.account.name, token: response.accessToken});
+    //var token = await auth.passTokenToApi();
+    //console.log('fetch;' + token);
+    //var response = await authy.callApi("GET", "api/todo");
+    //const data = await response.json();
+    //this.setState({ todos: data, loading: false});
+    //console.log(data);
+
     this.populateWeatherData();
   }
 
@@ -21,6 +36,10 @@ export class FetchData extends Component {
       <p><em>Loading...</em></p>
       :
       <div>
+        <br></br>
+        <strong>Hello, {this.state.user}.</strong>
+        <br></br>
+        <br></br>
       <table className='table table-striped' aria-labelledby="tabelLabel">
         <thead>
           <tr>
@@ -37,8 +56,10 @@ export class FetchData extends Component {
             <tr key={ todo.id }>
               <td><strong>{todo.id}</strong></td>
               <td>{todo.name}</td>
-              <td><input type="checkbox" checked={todo.isComplete} onClick={() => {}} onChange={()=>{this.updateToDo(todo.id, !todo.isComplete)}}style={{transform:'scale(1.8)', marginLeft:'10px'}}></input></td>
+              <td><input type="checkbox" checked={todo.isComplete} onClick={() => {}} onChange={()=>{this.updateToDo(todo.id, !todo.isComplete)}} style={{transform:'scale(1.8)', marginLeft:'10px'}}></input></td>
+              <td><button onClick={() => this.updatePriority(todo.id, todo.priority+1)}>-</button></td>
               <td>{todo.priority}</td>
+              <td><button onClick={() => this.updatePriority(todo.id, todo.priority-1)}>+</button></td>
               <td><button onClick={() => this.deleteToDo(todo.id)}>Delete</button></td>
             </tr>
           )}
@@ -55,22 +76,11 @@ export class FetchData extends Component {
     );
   }
 
-  async populateWeatherData() {
-    const response = await fetch('api/todo');
-    const data = await response.json();
-    this.setState({ todos: data, loading: false });
-  }
-
-  async deleteToDo(guid) {
-    await fetch('api/todo/' + guid, {method: 'DELETE'});
-    await this.populateWeatherData();
-  }
-
-  async updateToDo(guid, isComplete) {
+  async updatePriority(guid, priority) {
     
     const item = [{
-      "value": isComplete,
-      "path": "/IsComplete",
+      "value": priority,
+      "path": "/Priority",
       "op": "replace"
     }];
   
@@ -85,23 +95,61 @@ export class FetchData extends Component {
     await this.populateWeatherData();
   }
 
+  async populateWeatherData() {
+
+    var token = await authy.passTokenToApi();
+
+    var headers = new Headers();
+    var bearer = "Bearer " + token;
+    headers.append("Authorization", bearer);
+    var options = {
+              method: "GET",
+              headers: headers
+    };
+
+    const response = await fetch('api/todo', options);
+    const data = await response.json();
+    this.setState({ todos: data, loading: false});
+  }
+
+  async deleteToDo(guid) {
+    await fetch('api/todo/' + guid, {method: 'DELETE'});
+    await this.populateWeatherData();
+  }
+
+  async updateToDo(guid, isComplete, token) {
+    
+    const item = [{
+      "value": isComplete,
+      "path": "/IsComplete",
+      "op": "replace"
+    }];
+  
+    await fetch('api/todo/'+guid, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json-patch+json',
+        'Authorization': 'Bearer '+token
+      },
+      body: JSON.stringify(item)
+    })
+    await this.populateWeatherData();
+  }
+
   async addToDo() {
+    
     const addNameTextbox = document.getElementById('nameToDo');
+    
     const item = {
       IsComplete: false,
       Name: addNameTextbox.value.toString()
     };
   
-    await fetch('api/todo', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(item)
-    })
+    await authy.addItem(item);
+
     addNameTextbox.value = '';
-    await this.populateWeatherData();
+
+    this.populateWeatherData();
   }
 }
-

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
 
 namespace TodoApi
 {
@@ -20,11 +22,23 @@ namespace TodoApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddMicrosoftIdentityWebApi(options =>
+            {
+                Configuration.Bind("AzureAdB2C", options);
+
+                options.TokenValidationParameters.NameClaimType = "name";
+            },
+            options => { Configuration.Bind("AzureAdB2C", options); });
+
             services.AddScoped<IDataService, DataService>();
             services.AddControllersWithViews().AddNewtonsoftJson();
+            
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
+
+                
                 configuration.RootPath = "ClientApp/build";
             });
         }
@@ -48,6 +62,9 @@ namespace TodoApi
             app.UseSpaStaticFiles();
 
             app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

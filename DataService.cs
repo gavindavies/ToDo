@@ -30,7 +30,7 @@ public class DataService : IDataService
 	public IEnumerable<ToDo> Get()
 	{
 		List<ToDo> data = new List<ToDo>();
-		string queryString = $"SELECT * FROM ToDos;";
+		string queryString = $"SELECT * FROM ToDos ORDER BY Priority;";
        
         using(var conn = new SqlConnection(ConnectionString))
 		{

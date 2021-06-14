@@ -1,0 +1,4 @@
+{
+	"appService.defaultWebAppToDeploy": "/subscriptions/bbaa90f2-034e-4135-a419-4f09539d70af/resourceGroups/appsvc_windows_centralus/providers/Microsoft.Web/sites/atodo",
+	"appService.deploySubpath": "bin\\Debug\\net5.0\\publish"
+}
